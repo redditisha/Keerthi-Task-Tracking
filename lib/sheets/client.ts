@@ -93,3 +93,39 @@ export async function clearRow(sheetName: string, rowIndex: number): Promise<voi
     range: `${sheetName}!A${rowIndex}:Z${rowIndex}`,
   })
 }
+
+export async function deleteRow(sheetName: string, rowIndex: number): Promise<void> {
+  const sheets = getSheetsClient()
+  const spreadsheetId = SHEET_ID()
+
+  // Look up the numeric sheet ID for the named tab
+  const meta = await sheets.spreadsheets.get({ spreadsheetId })
+  const sheet = meta.data.sheets?.find(
+    (s) => s.properties?.title === sheetName
+  )
+  if (sheet?.properties?.sheetId == null) {
+    throw new Error(`Sheet tab "${sheetName}" not found`)
+  }
+  const sheetId = sheet.properties!.sheetId!
+
+  // rowIndex is 1-based (1 = header); convert to 0-based for the API
+  const startIndex = rowIndex - 1
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex,
+              endIndex: startIndex + 1,
+            },
+          },
+        },
+      ],
+    },
+  })
+}

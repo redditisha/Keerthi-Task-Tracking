@@ -4,6 +4,7 @@ import { getAllMembers } from '@/lib/sheets/team'
 import { enrichTasks, calcDeadlinePerformance } from '@/lib/utils/calculations'
 import { WeeklyReport, TaskView, ContentType, TaskFormat, Effort } from '@/types'
 import { startOfWeek, endOfWeek, format, parseISO, isWithinInterval } from 'date-fns'
+import { getAppSession } from '@/lib/auth/session'
 
 function getWeekLabel(date: Date): string {
   const month = format(date, 'MMMM')
@@ -84,8 +85,14 @@ export async function GET(req: NextRequest) {
   const weeksParam = parseInt(searchParams.get('weeks') ?? '8', 10)
 
   try {
+    const { role, person_id } = await getAppSession()
     const [tasks, members] = await Promise.all([getAllTasks(), getAllMembers()])
-    const enriched = enrichTasks(tasks, members)
+    let enriched = enrichTasks(tasks, members)
+
+    // Members only see their own history
+    if (role === 'member' && person_id) {
+      enriched = enriched.filter((t) => t.person_id === person_id)
+    }
 
     const reports: WeeklyReport[] = []
     const now = new Date()

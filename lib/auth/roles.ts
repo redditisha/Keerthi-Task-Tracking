@@ -1,20 +1,40 @@
-import { AppRole } from '@/types'
+import { AppRole, UserRole } from '@/types'
 import { getAdminEmails } from '@/lib/sheets/config'
+import { getMemberByEmail } from '@/lib/sheets/team'
 
-export async function resolveRole(email: string | null | undefined): Promise<AppRole> {
-  if (!email) return 'viewer'
+export interface RoleResult {
+  role: AppRole
+  person_id?: string
+  person_role?: UserRole
+}
+
+export async function resolveRole(email: string | null | undefined): Promise<RoleResult> {
+  if (!email) return { role: 'viewer' }
 
   const superAdmin = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
-  if (superAdmin && email.toLowerCase() === superAdmin) return 'super_admin'
+  if (superAdmin && email.toLowerCase() === superAdmin) return { role: 'super_admin' }
 
   try {
     const admins = await getAdminEmails()
-    if (admins.includes(email.toLowerCase())) return 'admin'
+    if (admins.includes(email.toLowerCase())) return { role: 'admin' }
   } catch {
-    // Config sheet not set up yet — fine, just not an admin
+    // Config sheet not set up yet
   }
 
-  return 'viewer'
+  try {
+    const member = await getMemberByEmail(email)
+    if (member && member.active) {
+      return { role: 'member', person_id: member.person_id, person_role: member.role }
+    }
+  } catch {
+    // Team sheet not set up yet
+  }
+
+  return { role: 'viewer' }
+}
+
+export function isAdmin(role: AppRole): boolean {
+  return role === 'admin' || role === 'super_admin'
 }
 
 export function canEdit(role: AppRole): boolean {

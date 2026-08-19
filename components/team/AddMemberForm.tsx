@@ -1,14 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { USER_ROLES, UserRole } from '@/types'
+import { TeamMember, USER_ROLES, UserRole } from '@/types'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 
-export default function AddMemberForm() {
-  const router = useRouter()
+interface Props {
+  onAdded?: (member: TeamMember) => void
+}
+
+export default function AddMemberForm({ onAdded }: Props) {
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('Editor')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -21,12 +24,13 @@ export default function AddMemberForm() {
       const res = await fetch('/api/team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, role, active: true }),
+        body: JSON.stringify({ name, email, role, active: true }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed')
       setName('')
-      router.refresh()
+      setEmail('')
+      onAdded?.(json.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -37,13 +41,23 @@ export default function AddMemberForm() {
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-3 flex-wrap">
       {error && <p className="text-xs text-red-600 w-full">{error}</p>}
-      <div className="flex-1 min-w-48">
+      <div className="flex-1 min-w-40">
         <Input
           label="Name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Full name"
+        />
+      </div>
+      <div className="flex-1 min-w-48">
+        <Input
+          label="Google Email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@gmail.com"
         />
       </div>
       <Select

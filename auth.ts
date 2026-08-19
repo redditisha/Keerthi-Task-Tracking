@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
-import { AppRole } from '@/types'
+import { AppRole, UserRole } from '@/types'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -12,15 +12,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
-        // Fresh sign-in — resolve role from email.
-        // Dynamic import keeps googleapis/fs/path out of the Edge-traced bundle.
+        // Fresh sign-in — resolve role (dynamic import keeps sheets out of Edge bundle)
         try {
           const { resolveRole } = await import('@/lib/auth/roles')
-          token.app_role = await resolveRole(token.email)
+          const result = await resolveRole(token.email)
+          token.app_role = result.role
+          token.person_id = result.person_id
+          token.person_role = result.person_role
         } catch {
-          // Fall back — super admin check by env var alone
+          // Fallback: check super admin by env var alone
           const superAdmin = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
-          token.app_role = (superAdmin && token.email?.toLowerCase() === superAdmin)
+          token.app_role = superAdmin && token.email?.toLowerCase() === superAdmin
             ? 'super_admin'
             : 'viewer'
         }
@@ -29,7 +31,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { app_role?: AppRole }).app_role = token.app_role as AppRole
+        const u = session.user as {
+          app_role?: AppRole
+          person_id?: string
+          person_role?: UserRole
+        }
+        u.app_role = token.app_role as AppRole
+        u.person_id = token.person_id as string | undefined
+        u.person_role = token.person_role as UserRole | undefined
       }
       return session
     },

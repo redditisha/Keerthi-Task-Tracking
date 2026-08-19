@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { TaskView, AppRole, TaskStatus, TASK_STATUSES } from '@/types'
 import { StatusBadge, PriorityBadge, EffortBadge, DeadlineBadge } from '@/components/ui/Badge'
 import { format, parseISO } from 'date-fns'
+import RequestChangeModal from './RequestChangeModal'
+import { ChangeRequest } from '@/lib/sheets/change-requests'
 
 function fmtDatetime(iso: string) {
   if (!iso) return ''
@@ -116,64 +118,74 @@ interface RowProps {
   onPatch: (taskId: string, patch: Record<string, unknown>) => Promise<void>
   onComplete: (task: TaskView) => Promise<void>
   onDelete: (taskId: string) => void
+  onRequestChange: () => void
+  hasPendingRequest: boolean
 }
 
-function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
+function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, hasPendingRequest }: RowProps) {
   const canEdit = role === 'admin' || role === 'super_admin'
+  const isMember = role === 'member'
   const isCompleted = task.status === 'Completed'
 
   return (
     <tr className={`group border-b border-gray-100 hover:bg-gray-50 text-sm ${isCompleted ? 'opacity-70' : ''}`}>
       {/* Task name */}
-      <td className="px-3 py-2.5 min-w-48 max-w-64">
-        <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
-          {task.task_name}
-        </span>
+      <td className="px-2 py-2 min-w-40 max-w-56">
+        <div className="flex items-start gap-1">
+          <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
+            {task.task_name}
+          </span>
+          {(task.video_quantity ?? 1) > 1 && (
+            <span className="shrink-0 text-xs bg-gray-100 text-gray-500 px-1 py-0.5 rounded-full font-medium">
+              ×{task.video_quantity}
+            </span>
+          )}
+          {hasPendingRequest && (
+            <span className="shrink-0 text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded-full font-medium" title="Change request pending">
+              !
+            </span>
+          )}
+        </div>
         {task.notes && (
           <p className="text-xs text-gray-400 truncate mt-0.5" title={task.notes}>{task.notes}</p>
         )}
       </td>
 
-      {/* Person */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        <span className="text-xs text-gray-600">{task.person_name}</span>
-      </td>
+      {/* Person — hidden for members (they only see their own) */}
+      {!isMember && (
+        <td className="px-2 py-2 whitespace-nowrap">
+          <span className="text-xs text-gray-600">{task.person_name}</span>
+        </td>
+      )}
 
       {/* Type / Format */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        <span className="text-xs text-gray-500">{task.content_type}</span>
-        <span className="text-xs text-gray-400"> · {task.format}</span>
+      <td className="px-2 py-2">
+        <div className="text-xs text-gray-500 whitespace-nowrap">{task.content_type}</div>
+        <div className="text-xs text-gray-400 whitespace-nowrap">{task.format}</div>
       </td>
 
-      {/* Effort */}
-      <td className="px-3 py-2.5">
-        <EffortBadge effort={task.effort} />
-      </td>
-
-      {/* Priority */}
-      <td className="px-3 py-2.5">
-        <PriorityBadge priority={task.priority} />
-      </td>
-
-      {/* Status — inline editable */}
-      <td className="px-3 py-2.5">
-        <StatusCell
-          value={task.status}
-          canEdit={canEdit}
-          onSave={(s) => onPatch(task.task_id, { status: s })}
-        />
+      {/* Effort / Status merged */}
+      <td className="px-2 py-2">
+        <div className="flex flex-col gap-1">
+          <EffortBadge effort={task.effort} />
+          <StatusCell
+            value={task.status}
+            canEdit={canEdit}
+            onSave={(s) => onPatch(task.task_id, { status: s })}
+          />
+        </div>
       </td>
 
       {/* Deadline */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td className="px-2 py-2 whitespace-nowrap">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-gray-500">{fmtDeadline(task.deadline)}</span>
           {task.deadline_performance && <DeadlineBadge performance={task.deadline_performance} />}
         </div>
       </td>
 
-      {/* Started At — inline editable */}
-      <td className="px-3 py-2.5">
+      {/* Started At */}
+      <td className="px-2 py-2">
         <DateCell
           value={task.started_at}
           canEdit={canEdit}
@@ -181,8 +193,8 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
         />
       </td>
 
-      {/* Completed At — inline editable */}
-      <td className="px-3 py-2.5">
+      {/* Completed At */}
+      <td className="px-2 py-2">
         <DateCell
           value={task.completed_at}
           canEdit={canEdit}
@@ -191,7 +203,7 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
       </td>
 
       {/* Turnaround */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td className="px-2 py-2 whitespace-nowrap">
         <span className="text-xs text-gray-400">{task.turnaround_time ?? '—'}</span>
         {task.delay_duration && (
           <span className="text-xs text-red-500 block">{task.delay_duration} late</span>
@@ -199,7 +211,7 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
       </td>
 
       {/* Published — inline toggle */}
-      <td className="px-3 py-2.5">
+      <td className="px-2 py-2">
         {canEdit ? (
           <input
             type="checkbox"
@@ -214,15 +226,15 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
 
       {/* Actions */}
       {canEdit && (
-        <td className="px-3 py-2.5 whitespace-nowrap">
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <td className="px-2 py-2 whitespace-nowrap">
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {!isCompleted && (
               <button
                 onClick={() => onComplete(task)}
                 className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
                 title="Mark as completed"
               >
-                ✓ Done
+                ✓
               </button>
             )}
             <Link
@@ -240,6 +252,18 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete }: RowProps) {
           </div>
         </td>
       )}
+      {isMember && (
+        <td className="px-2 py-2 whitespace-nowrap">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={onRequestChange}
+              className="text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded hover:bg-yellow-100 transition-colors"
+            >
+              Request Change
+            </button>
+          </div>
+        </td>
+      )}
     </tr>
   )
 }
@@ -251,10 +275,13 @@ interface Props {
   onUpdate: (updated: TaskView) => void
   onRemove: (taskId: string) => void
   emptyMessage?: string
+  pendingRequests?: ChangeRequest[]
 }
 
-export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessage }: Props) {
+export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessage, pendingRequests = [] }: Props) {
   const canEdit = role === 'admin' || role === 'super_admin'
+  const isMember = role === 'member'
+  const [changeRequestTask, setChangeRequestTask] = useState<TaskView | null>(null)
 
   const handlePatch = async (taskId: string, patch: Record<string, unknown>) => {
     const res = await fetch(`/api/tasks/${taskId}`, {
@@ -291,37 +318,52 @@ export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessag
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Task</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Person</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Effort</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Priority</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Deadline</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Started</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Completed</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Time</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Published</th>
-            {canEdit && <th className="px-3 py-2.5"></th>}
-          </tr>
-        </thead>
-        <tbody className="bg-white">
-          {tasks.map((t) => (
-            <TaskRow
-              key={t.task_id}
-              task={t}
-              role={role}
-              onPatch={handlePatch}
-              onComplete={handleComplete}
-              onDelete={handleDelete}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      {changeRequestTask && (
+        <RequestChangeModal
+          task={changeRequestTask}
+          onClose={() => setChangeRequestTask(null)}
+          onSubmitted={() => {
+            setChangeRequestTask(null)
+          }}
+        />
+      )}
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Task</th>
+              {!isMember && <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Person</th>}
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Effort / Status</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Deadline</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Started</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Completed</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Time</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Pub</th>
+              {(canEdit || isMember) && <th className="px-2 py-2"></th>}
+            </tr>
+          </thead>
+          <tbody className="bg-white">
+            {tasks.map((t) => {
+              const hasPendingRequest = pendingRequests.some((r) => r.task_id === t.task_id)
+              return (
+                <TaskRow
+                  key={t.task_id}
+                  task={t}
+                  role={role}
+                  onPatch={handlePatch}
+                  onComplete={handleComplete}
+                  onDelete={handleDelete}
+                  onRequestChange={() => setChangeRequestTask(t)}
+                  hasPendingRequest={hasPendingRequest}
+                />
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

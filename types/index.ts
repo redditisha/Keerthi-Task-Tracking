@@ -17,7 +17,7 @@ export type Priority = 'Urgent' | 'Normal'
 export type RequestSource = 'Internal' | 'Client' | 'Campaign' | 'Management' | 'Ad hoc' | 'Other'
 export type TaskStatus = 'Not Started' | 'Started' | 'In Progress' | 'Completed' | 'On Hold / Blocked'
 export type UserRole = 'Editor' | 'Designer' | 'Writer' | 'Content Manager' | 'Other'
-export type AppRole = 'super_admin' | 'admin' | 'viewer'
+export type AppRole = 'super_admin' | 'admin' | 'member' | 'viewer'
 
 export type DeadlinePerformance = 'On time' | 'Late' | 'Not yet due' | 'Overdue'
 
@@ -29,6 +29,7 @@ export interface TeamMember {
   role: UserRole
   active: boolean
   created_at: string
+  email: string
 }
 
 export interface Task {
@@ -49,6 +50,7 @@ export interface Task {
   notes: string
   created_at: string
   updated_at: string
+  video_quantity: number  // number of videos/creatives in this task
 }
 
 // Task with derived/joined fields for display
@@ -77,16 +79,11 @@ export interface CreateTaskInput {
   status: TaskStatus
   published: boolean
   notes?: string
+  video_quantity?: number
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
   task_id: string
-}
-
-export interface CreateTeamMemberInput {
-  name: string
-  role: UserRole
-  active: boolean
 }
 
 // ─── Reporting ───────────────────────────────────────────────────────────────
@@ -114,6 +111,15 @@ export interface SessionUser {
   email?: string | null
   image?: string | null
   app_role: AppRole
+  person_id?: string       // set when role === 'member'
+  person_role?: UserRole   // set when role === 'member'
+}
+
+export interface CreateTeamMemberInput {
+  name: string
+  role: UserRole
+  active: boolean
+  email?: string
 }
 
 // ─── API Responses ───────────────────────────────────────────────────────────

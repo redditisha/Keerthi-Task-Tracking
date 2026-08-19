@@ -2,9 +2,9 @@ import { getMemberById } from '@/lib/sheets/team'
 import { getAllTasks } from '@/lib/sheets/tasks'
 import { getAllMembers } from '@/lib/sheets/team'
 import { enrichTasks } from '@/lib/utils/calculations'
-import { auth } from '@/auth'
-import { AppRole, TaskView } from '@/types'
-import { notFound } from 'next/navigation'
+import { getAppSession } from '@/lib/auth/session'
+import { TaskView } from '@/types'
+import { notFound, redirect } from 'next/navigation'
 import { StatusBadge, PriorityBadge, DeadlineBadge } from '@/components/ui/Badge'
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -24,8 +24,14 @@ type Params = { params: Promise<{ id: string }> }
 
 export default async function PersonPage({ params }: Params) {
   const { id } = await params
-  const session = await auth()
-  const role = (session?.user as { app_role?: AppRole })?.app_role ?? 'viewer'
+  const { role, person_id } = await getAppSession()
+
+  // Viewers can't access individual profiles
+  if (role === 'viewer') redirect('/')
+
+  // Members can only view their own profile
+  if (role === 'member' && person_id !== id) redirect(`/team/${person_id}`)
+
   const canEdit = role === 'admin' || role === 'super_admin'
 
   let member, tasks: TaskView[] = []

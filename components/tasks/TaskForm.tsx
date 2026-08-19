@@ -32,6 +32,7 @@ const DEFAULT: CreateTaskInput = {
   status: 'Not Started',
   published: false,
   notes: '',
+  video_quantity: 1,
 }
 
 export default function TaskForm({ members, initialValues, taskId, onSuccess }: Props) {
@@ -40,7 +41,7 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const set = (key: keyof CreateTaskInput, value: string | boolean) => {
+  const set = (key: keyof CreateTaskInput, value: string | boolean | number) => {
     setForm((prev) => {
       const next = { ...prev, [key]: value }
       // Reset format when content type changes
@@ -125,8 +126,8 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
         />
       </div>
 
-      {/* Effort + Priority */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Effort + Priority + Quantity */}
+      <div className="grid grid-cols-3 gap-4">
         <Select
           label="Effort *"
           value={form.effort}
@@ -138,6 +139,13 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
           value={form.priority}
           onChange={(e) => set('priority', e.target.value as 'Urgent' | 'Normal')}
           options={PRIORITIES.map((p) => ({ value: p, label: p }))}
+        />
+        <Input
+          label="Quantity"
+          type="number"
+          min={1}
+          value={String(form.video_quantity ?? 1)}
+          onChange={(e) => set('video_quantity', Math.max(1, parseInt(e.target.value, 10) || 1))}
         />
       </div>
 

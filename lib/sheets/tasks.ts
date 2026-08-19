@@ -2,7 +2,7 @@ import {
   Task, CreateTaskInput, UpdateTaskInput,
   ContentType, TaskFormat, Effort, Priority, RequestSource, TaskStatus,
 } from '@/types'
-import { getRange, appendRow, updateRow, clearRow } from './client'
+import { getRange, appendRow, updateRow, deleteRow } from './client'
 
 const SHEET = 'Tasks'
 const HEADER_ROW = 1
@@ -25,6 +25,7 @@ const HEADER_ROW = 1
 // 14 notes
 // 15 created_at
 // 16 updated_at
+// 17 video_quantity
 
 function rowToTask(row: string[]): Task {
   return {
@@ -45,20 +46,21 @@ function rowToTask(row: string[]): Task {
     notes: row[14] ?? '',
     created_at: row[15] ?? '',
     updated_at: row[16] ?? '',
+    video_quantity: parseInt(row[17] ?? '1', 10) || 1,
   }
 }
 
-function taskToRow(t: Task): (string | boolean)[] {
+function taskToRow(t: Task): (string | boolean | number)[] {
   return [
     t.task_id, t.task_name, t.person_id, t.content_type, t.format,
     t.effort, t.priority, t.request_source, t.deadline, t.added_at,
     t.started_at, t.completed_at, t.status, t.published, t.notes,
-    t.created_at, t.updated_at,
+    t.created_at, t.updated_at, t.video_quantity ?? 1,
   ]
 }
 
 export async function getAllTasks(): Promise<Task[]> {
-  const rows = await getRange(`${SHEET}!A2:Q5000`)
+  const rows = await getRange(`${SHEET}!A2:R5000`)
   return rows.filter((r) => r[0]).map(rowToTask)
 }
 
@@ -69,8 +71,11 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
   const all = await getAllTasks()
-  const num = all.length + 1
-  const task_id = `T${String(num).padStart(5, '0')}`
+  const maxNum = all.reduce((max, t) => {
+    const n = parseInt(t.task_id.replace(/^T0*/, ''), 10)
+    return isNaN(n) ? max : Math.max(max, n)
+  }, 0)
+  const task_id = `T${String(maxNum + 1).padStart(5, '0')}`
   const now = new Date().toISOString()
   const task: Task = {
     task_id,
@@ -90,13 +95,14 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     notes: input.notes ?? '',
     created_at: now,
     updated_at: now,
+    video_quantity: input.video_quantity ?? 1,
   }
   await appendRow(SHEET, taskToRow(task))
   return task
 }
 
 export async function updateTask(input: UpdateTaskInput): Promise<Task | null> {
-  const rows = await getRange(`${SHEET}!A2:Q5000`)
+  const rows = await getRange(`${SHEET}!A2:R5000`)
   const idx = rows.findIndex((r) => r[0] === input.task_id)
   if (idx === -1) return null
 
@@ -111,9 +117,9 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task | null> {
 }
 
 export async function deleteTask(taskId: string): Promise<boolean> {
-  const rows = await getRange(`${SHEET}!A2:Q5000`)
+  const rows = await getRange(`${SHEET}!A2:R5000`)
   const idx = rows.findIndex((r) => r[0] === taskId)
   if (idx === -1) return false
-  await clearRow(SHEET, idx + 1 + HEADER_ROW)
+  await deleteRow(SHEET, idx + 1 + HEADER_ROW)
   return true
 }

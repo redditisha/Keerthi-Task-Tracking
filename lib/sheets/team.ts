@@ -4,7 +4,7 @@ import { getRange, appendRow, updateRow, clearRow } from './client'
 const SHEET = 'Team'
 const HEADER_ROW = 1
 
-// Columns: person_id | name | role | active | created_at
+// Columns: person_id(A) | name(B) | role(C) | active(D) | created_at(E) | email(F)
 function rowToMember(row: string[]): TeamMember {
   return {
     person_id: row[0] ?? '',
@@ -12,21 +12,27 @@ function rowToMember(row: string[]): TeamMember {
     role: (row[2] as UserRole) ?? 'Other',
     active: row[3] === 'TRUE' || row[3] === 'true' || row[3] === '1',
     created_at: row[4] ?? '',
+    email: (row[5] ?? '').toLowerCase().trim(),
   }
 }
 
 function memberToRow(m: TeamMember): (string | boolean)[] {
-  return [m.person_id, m.name, m.role, m.active, m.created_at]
+  return [m.person_id, m.name, m.role, m.active, m.created_at, m.email]
 }
 
 export async function getAllMembers(): Promise<TeamMember[]> {
-  const rows = await getRange(`${SHEET}!A2:E1000`)
+  const rows = await getRange(`${SHEET}!A2:F1000`)
   return rows.filter((r) => r[0]).map(rowToMember)
 }
 
 export async function getMemberById(personId: string): Promise<TeamMember | null> {
   const members = await getAllMembers()
   return members.find((m) => m.person_id === personId) ?? null
+}
+
+export async function getMemberByEmail(email: string): Promise<TeamMember | null> {
+  const members = await getAllMembers()
+  return members.find((m) => m.email === email.toLowerCase().trim()) ?? null
 }
 
 export async function createMember(input: CreateTeamMemberInput): Promise<TeamMember> {
@@ -39,6 +45,7 @@ export async function createMember(input: CreateTeamMemberInput): Promise<TeamMe
     role: input.role,
     active: input.active,
     created_at: new Date().toISOString(),
+    email: input.email?.toLowerCase().trim() ?? '',
   }
   await appendRow(SHEET, memberToRow(member))
   return member
@@ -48,17 +55,21 @@ export async function updateMember(
   personId: string,
   input: Partial<CreateTeamMemberInput>
 ): Promise<TeamMember | null> {
-  const rows = await getRange(`${SHEET}!A2:E1000`)
+  const rows = await getRange(`${SHEET}!A2:F1000`)
   const idx = rows.findIndex((r) => r[0] === personId)
   if (idx === -1) return null
   const existing = rowToMember(rows[idx])
-  const updated: TeamMember = { ...existing, ...input }
+  const updated: TeamMember = {
+    ...existing,
+    ...input,
+    email: input.email !== undefined ? input.email.toLowerCase().trim() : existing.email,
+  }
   await updateRow(SHEET, idx + 1 + HEADER_ROW, memberToRow(updated))
   return updated
 }
 
 export async function deleteMember(personId: string): Promise<boolean> {
-  const rows = await getRange(`${SHEET}!A2:E1000`)
+  const rows = await getRange(`${SHEET}!A2:F1000`)
   const idx = rows.findIndex((r) => r[0] === personId)
   if (idx === -1) return false
   await clearRow(SHEET, idx + 1 + HEADER_ROW)
