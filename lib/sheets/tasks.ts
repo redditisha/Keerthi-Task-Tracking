@@ -88,7 +88,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     request_source: input.request_source,
     deadline: input.deadline,
     added_at: now,
-    started_at: input.started_at ?? '',
+    started_at: input.started_at ?? now,
     completed_at: input.completed_at ?? '',
     status: input.status,
     published: input.published,
