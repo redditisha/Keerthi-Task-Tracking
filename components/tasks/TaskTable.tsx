@@ -230,19 +230,19 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
       {/* Actions */}
       {canEdit && (
         <td className="px-2 py-2 whitespace-nowrap">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-col gap-2">
             {isInReview ? (
               <>
                 <button
                   onClick={() => onComplete(task)}
-                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
+                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded hover:bg-green-100 transition-colors"
                   title="Approve — mark as completed"
                 >
                   Approve
                 </button>
                 <button
                   onClick={() => onPatch(task.task_id, { status: 'In Progress' })}
-                  className="text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-100 transition-colors"
+                  className="text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 px-3 py-1.5 rounded hover:bg-gray-100 transition-colors"
                   title="Send back to In Progress"
                 >
                   Send Back
@@ -252,24 +252,24 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
               !isCompleted && (
                 <button
                   onClick={() => onComplete(task)}
-                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
+                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded hover:bg-green-100 transition-colors"
                   title="Mark as completed"
                 >
-                  ✓
+                  ✓ Done
                 </button>
               )
             )}
             <Link
               href={`/tasks/${task.task_id}/edit`}
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 transition-colors text-center"
             >
               Edit
             </Link>
             <button
               onClick={() => onDelete(task.task_id)}
-              className="text-xs text-red-400 hover:text-red-600"
+              className="text-xs font-medium text-red-500 border border-red-200 bg-red-50 px-3 py-1.5 rounded hover:bg-red-100 transition-colors"
             >
-              Del
+              Delete
             </button>
           </div>
         </td>
