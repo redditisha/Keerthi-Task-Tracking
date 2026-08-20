@@ -5,10 +5,11 @@ import { useSearchParams } from 'next/navigation'
 import { TaskView, TeamMember, AppRole } from '@/types'
 import TaskTable from '@/components/tasks/TaskTable'
 import TaskFilters, { Filters, DEFAULT_FILTERS } from '@/components/tasks/TaskFilters'
+import ChangeRequestsPanel from '@/components/admin/ChangeRequestsPanel'
 import { ChangeRequest } from '@/lib/sheets/change-requests'
 import Link from 'next/link'
 
-type Tab = 'active' | 'in_review' | 'completed' | 'deleted'
+type Tab = 'active' | 'in_review' | 'completed' | 'deleted' | 'change_requests'
 
 function applyFilters(tasks: TaskView[], filters: Filters): TaskView[] {
   return tasks.filter((t) => {
@@ -78,6 +79,8 @@ export default function TasksPageClient({ role }: Props) {
     tab === 'completed' ? completedTasks :
     deletedTasks
 
+  const pendingChangeRequests = pendingRequests.length
+
   const handleUpdate = (updated: TaskView) => {
     setTasks((prev) => prev.map((t) => (t.task_id === updated.task_id ? updated : t)))
   }
@@ -109,7 +112,7 @@ export default function TasksPageClient({ role }: Props) {
         )}
       </div>
 
-      {tab !== 'deleted' && tab !== 'in_review' && (
+      {tab !== 'deleted' && tab !== 'in_review' && tab !== 'change_requests' && (
         <TaskFilters
           filters={filters}
           members={members}
@@ -153,9 +156,21 @@ export default function TasksPageClient({ role }: Props) {
             )}
           </button>
         )}
+        {canEdit && (
+          <button className={tabClass('change_requests')} onClick={() => setTab('change_requests')}>
+            Change Requests
+            {pendingChangeRequests > 0 && (
+              <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                {pendingChangeRequests}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
-      {loading ? (
+      {tab === 'change_requests' ? (
+        <ChangeRequestsPanel />
+      ) : loading ? (
         <div className="text-sm text-gray-400 py-10 text-center">Loading tasks…</div>
       ) : (
         <TaskTable

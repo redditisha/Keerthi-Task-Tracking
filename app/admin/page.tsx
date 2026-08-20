@@ -3,7 +3,6 @@ import { AppRole } from '@/types'
 import { redirect } from 'next/navigation'
 import AdminEmailManager from '@/components/admin/AdminEmailManager'
 import LogsViewer from '@/components/admin/LogsViewer'
-import ChangeRequestsPanel from '@/components/admin/ChangeRequestsPanel'
 import ChannelsManager from '@/components/admin/ChannelsManager'
 
 export default async function AdminPage() {
@@ -26,11 +25,6 @@ export default async function AdminPage() {
       <div className="max-w-lg">
         <h2 className="text-xl font-semibold text-gray-900 mb-3">Channels</h2>
         <ChannelsManager />
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">Change Requests</h2>
-        <ChangeRequestsPanel />
       </div>
 
       <div>
