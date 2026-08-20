@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { format, parseISO } from 'date-fns'
 import {
   CreateTaskInput, ContentType, TaskFormat, TaskStatus, TeamMember,
   CONTENT_TYPES, FORMATS_BY_TYPE, EFFORT_LEVELS, PRIORITIES, TASK_STATUSES,
@@ -9,6 +10,18 @@ import {
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
+
+// Convert ISO UTC string → datetime-local input value (local time)
+function isoToInput(iso: string) {
+  if (!iso) return ''
+  try { return format(parseISO(iso), "yyyy-MM-dd'T'HH:mm") } catch { return '' }
+}
+
+// Convert datetime-local input value → ISO UTC string
+function inputToIso(v: string) {
+  if (!v) return ''
+  return new Date(v).toISOString()
+}
 
 interface Props {
   members: TeamMember[]
@@ -186,8 +199,8 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
       <Input
         label="Deadline"
         type="datetime-local"
-        value={form.deadline ? form.deadline.slice(0, 16) : ''}
-        onChange={(e) => set('deadline', e.target.value ? new Date(e.target.value).toISOString() : '')}
+        value={isoToInput(form.deadline ?? '')}
+        onChange={(e) => set('deadline', inputToIso(e.target.value))}
       />
 
       {/* Timeline */}
@@ -195,14 +208,14 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
         <Input
           label="Started At"
           type="datetime-local"
-          value={form.started_at ? form.started_at.slice(0, 16) : ''}
-          onChange={(e) => set('started_at', e.target.value ? new Date(e.target.value).toISOString() : '')}
+          value={isoToInput(form.started_at ?? '')}
+          onChange={(e) => set('started_at', inputToIso(e.target.value))}
         />
         <Input
           label="Completed At"
           type="datetime-local"
-          value={form.completed_at ? form.completed_at.slice(0, 16) : ''}
-          onChange={(e) => set('completed_at', e.target.value ? new Date(e.target.value).toISOString() : '')}
+          value={isoToInput(form.completed_at ?? '')}
+          onChange={(e) => set('completed_at', inputToIso(e.target.value))}
         />
       </div>
 
