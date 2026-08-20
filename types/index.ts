@@ -9,13 +9,13 @@ export type CreativeFormat =
   | 'YouTube Thumbnail'
   | 'Instagram Thumbnail'
   | 'Other Creative'
-export type WrittenFormat = 'Script' | 'Caption' | 'Tweet' | 'Article' | 'Other Written'
+export type WrittenFormat = 'Long Form Script' | 'Short Form Script' | 'Carousel' | 'Caption' | 'Tweet' | 'Article' | 'Other'
 export type TaskFormat = VideoFormat | CreativeFormat | WrittenFormat
 
 export type Effort = 'Low' | 'Medium' | 'High'
 export type Priority = 'Urgent' | 'Normal'
-export type RequestSource = 'Internal' | 'Client' | 'Campaign' | 'Management' | 'Ad hoc' | 'Other'
-export type TaskStatus = 'Not Started' | 'Started' | 'In Progress' | 'Completed' | 'On Hold / Blocked'
+export type RequestSource = string   // dynamic — managed via Channels sheet
+export type TaskStatus = 'Not Started' | 'Started' | 'In Progress' | 'Completed' | 'On Hold / Blocked' | 'Deleted'
 export type UserRole = 'Editor' | 'Designer' | 'Writer' | 'Content Manager' | 'Other'
 export type AppRole = 'super_admin' | 'admin' | 'member' | 'viewer'
 
@@ -93,9 +93,27 @@ export interface WeeklyReport {
   week_start: string        // ISO date
   week_end: string          // ISO date
   total_completed: number
-  by_person: Array<{ name: string; count: number }>
-  by_content_type: Array<{ type: ContentType; count: number }>
-  by_format: Array<{ format: TaskFormat; count: number }>
+  total_output: number      // sum of video_quantity across completed tasks
+  by_person: Array<{ name: string; count: number; output: number }>
+  by_content_type: Array<{ type: ContentType; count: number; output: number }>
+  by_format: Array<{ format: TaskFormat; count: number; output: number }>
+  by_effort: Array<{ effort: Effort; count: number }>
+  urgent_count: number
+  on_time_count: number
+  late_count: number
+  published_count: number
+  avg_turnaround_minutes: number | null
+}
+
+export interface MonthlyReport {
+  month_label: string       // e.g. "August 2026"
+  month_start: string       // ISO date
+  month_end: string         // ISO date
+  total_completed: number
+  total_output: number      // sum of video_quantity across completed tasks
+  by_person: Array<{ name: string; count: number; output: number }>
+  by_content_type: Array<{ type: ContentType; count: number; output: number }>
+  by_format: Array<{ format: TaskFormat; count: number; output: number }>
   by_effort: Array<{ effort: Effort; count: number }>
   urgent_count: number
   on_time_count: number
@@ -136,11 +154,11 @@ export const CONTENT_TYPES: ContentType[] = ['Video', 'Creative', 'Written']
 export const FORMATS_BY_TYPE: Record<ContentType, TaskFormat[]> = {
   Video: ['Short-form', 'Long-form'],
   Creative: ['Static', 'Carousel', 'YouTube Thumbnail', 'Instagram Thumbnail', 'Other Creative'],
-  Written: ['Script', 'Caption', 'Tweet', 'Article', 'Other Written'],
+  Written: ['Long Form Script', 'Short Form Script', 'Carousel', 'Caption', 'Tweet', 'Article', 'Other'],
 }
 
 export const EFFORT_LEVELS: Effort[] = ['Low', 'Medium', 'High']
 export const PRIORITIES: Priority[] = ['Urgent', 'Normal']
-export const REQUEST_SOURCES: RequestSource[] = ['Internal', 'Client', 'Campaign', 'Management', 'Ad hoc', 'Other']
+export const REQUEST_SOURCES: RequestSource[] = []   // kept for compatibility; populated dynamically from Channels sheet
 export const TASK_STATUSES: TaskStatus[] = ['Not Started', 'Started', 'In Progress', 'Completed', 'On Hold / Blocked']
 export const USER_ROLES: UserRole[] = ['Editor', 'Designer', 'Writer', 'Content Manager', 'Other']

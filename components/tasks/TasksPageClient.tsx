@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { TaskView, TeamMember, AppRole } from '@/types'
 import TaskTable from '@/components/tasks/TaskTable'
 import TaskFilters, { Filters, DEFAULT_FILTERS } from '@/components/tasks/TaskFilters'
 import { ChangeRequest } from '@/lib/sheets/change-requests'
 import Link from 'next/link'
 
-type Tab = 'active' | 'completed'
+type Tab = 'active' | 'completed' | 'deleted'
 
 function applyFilters(tasks: TaskView[], filters: Filters): TaskView[] {
   return tasks.filter((t) => {
@@ -29,12 +30,17 @@ interface Props {
 
 export default function TasksPageClient({ role }: Props) {
   const canEdit = role === 'admin' || role === 'super_admin'
+  const searchParams = useSearchParams()
 
   const [tasks, setTasks] = useState<TaskView[]>([])
   const [members, setMembers] = useState<TeamMember[]>([])
   const [pendingRequests, setPendingRequests] = useState<ChangeRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<Filters>(() => ({
+    ...DEFAULT_FILTERS,
+    search: searchParams.get('search') ?? '',
+    person_id: searchParams.get('person_id') ?? '',
+  }))
   const [tab, setTab] = useState<Tab>('active')
 
   useEffect(() => {
@@ -51,14 +57,18 @@ export default function TasksPageClient({ role }: Props) {
   }, [])
 
   const activeTasks = useMemo(
-    () => applyFilters(tasks.filter((t) => t.status !== 'Completed'), filters),
+    () => applyFilters(tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Deleted'), filters),
     [tasks, filters]
   )
   const completedTasks = useMemo(
     () => applyFilters(tasks.filter((t) => t.status === 'Completed'), filters),
     [tasks, filters]
   )
-  const displayed = tab === 'active' ? activeTasks : completedTasks
+  const deletedTasks = useMemo(
+    () => tasks.filter((t) => t.status === 'Deleted'),
+    [tasks]
+  )
+  const displayed = tab === 'active' ? activeTasks : tab === 'completed' ? completedTasks : deletedTasks
 
   const handleUpdate = (updated: TaskView) => {
     setTasks((prev) => prev.map((t) => (t.task_id === updated.task_id ? updated : t)))
@@ -91,12 +101,14 @@ export default function TasksPageClient({ role }: Props) {
         )}
       </div>
 
-      <TaskFilters
-        filters={filters}
-        members={members}
-        onChange={setFilters}
-        onReset={() => setFilters(DEFAULT_FILTERS)}
-      />
+      {tab !== 'deleted' && (
+        <TaskFilters
+          filters={filters}
+          members={members}
+          onChange={setFilters}
+          onReset={() => setFilters(DEFAULT_FILTERS)}
+        />
+      )}
 
       <div className="flex items-center border-b border-gray-200 gap-1">
         <button className={tabClass('active')} onClick={() => setTab('active')}>
@@ -115,6 +127,16 @@ export default function TasksPageClient({ role }: Props) {
             </span>
           )}
         </button>
+        {canEdit && (
+          <button className={tabClass('deleted')} onClick={() => setTab('deleted')}>
+            Deleted
+            {!loading && deletedTasks.length > 0 && (
+              <span className="ml-1.5 text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full">
+                {deletedTasks.length}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -127,8 +149,9 @@ export default function TasksPageClient({ role }: Props) {
           onRemove={handleRemove}
           pendingRequests={pendingRequests}
           emptyMessage={
-            tab === 'active' ? 'No active tasks.' : 'No completed tasks yet.'
+            tab === 'active' ? 'No active tasks.' : tab === 'completed' ? 'No completed tasks yet.' : 'No deleted tasks.'
           }
+          readonly={tab === 'deleted'}
         />
       )}
     </div>

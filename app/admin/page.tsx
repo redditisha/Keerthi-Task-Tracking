@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import AdminEmailManager from '@/components/admin/AdminEmailManager'
 import LogsViewer from '@/components/admin/LogsViewer'
 import ChangeRequestsPanel from '@/components/admin/ChangeRequestsPanel'
+import ChannelsManager from '@/components/admin/ChannelsManager'
 
 export default async function AdminPage() {
   const session = await auth()
@@ -21,6 +22,11 @@ export default async function AdminPage() {
           <AdminEmailManager />
         </div>
       )}
+
+      <div className="max-w-lg">
+        <h2 className="text-xl font-semibold text-gray-900 mb-3">Channels</h2>
+        <ChannelsManager />
+      </div>
 
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-3">Change Requests</h2>

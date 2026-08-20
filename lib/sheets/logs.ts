@@ -45,8 +45,13 @@ export async function getAllLogs(): Promise<LogEntry[]> {
 
 export async function createLog(input: CreateLogInput): Promise<void> {
   const rows = await getRange(`${SHEET}!A2:A5000`)
-  const count = rows.filter((r) => r[0]).length
-  const log_id = `L${String(count + 1).padStart(5, '0')}`
+  let maxNum = 0
+  for (const r of rows) {
+    if (!r[0]) continue
+    const n = parseInt(r[0].replace(/^L0*/, ''), 10)
+    if (!isNaN(n) && n > maxNum) maxNum = n
+  }
+  const log_id = `L${String(maxNum + 1).padStart(5, '0')}`
 
   await appendRow(SHEET, [
     log_id,

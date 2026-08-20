@@ -2,7 +2,7 @@ import {
   Task, CreateTaskInput, UpdateTaskInput,
   ContentType, TaskFormat, Effort, Priority, RequestSource, TaskStatus,
 } from '@/types'
-import { getRange, appendRow, updateRow, deleteRow } from './client'
+import { getRange, appendRow, updateRow } from './client'
 
 const SHEET = 'Tasks'
 const HEADER_ROW = 1
@@ -120,6 +120,13 @@ export async function deleteTask(taskId: string): Promise<boolean> {
   const rows = await getRange(`${SHEET}!A2:R5000`)
   const idx = rows.findIndex((r) => r[0] === taskId)
   if (idx === -1) return false
-  await deleteRow(SHEET, idx + 1 + HEADER_ROW)
+
+  const existing = rowToTask(rows[idx])
+  const updated: Task = {
+    ...existing,
+    status: 'Deleted',
+    updated_at: new Date().toISOString(),
+  }
+  await updateRow(SHEET, idx + 1 + HEADER_ROW, taskToRow(updated))
   return true
 }

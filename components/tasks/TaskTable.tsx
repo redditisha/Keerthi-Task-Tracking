@@ -120,15 +120,17 @@ interface RowProps {
   onDelete: (taskId: string) => void
   onRequestChange: () => void
   hasPendingRequest: boolean
+  readonly?: boolean
 }
 
-function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, hasPendingRequest }: RowProps) {
-  const canEdit = role === 'admin' || role === 'super_admin'
-  const isMember = role === 'member'
+function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, hasPendingRequest, readonly = false }: RowProps) {
+  const canEdit = (role === 'admin' || role === 'super_admin') && !readonly
+  const isMember = role === 'member' && !readonly
   const isCompleted = task.status === 'Completed'
+  const isDeleted = task.status === 'Deleted'
 
   return (
-    <tr className={`group border-b border-gray-100 hover:bg-gray-50 text-sm ${isCompleted ? 'opacity-70' : ''}`}>
+    <tr className={`group border-b border-gray-100 hover:bg-gray-50 text-sm ${isCompleted ? 'opacity-70' : ''} ${isDeleted ? 'opacity-50 line-through-[task]' : ''}`}>
       {/* Task name */}
       <td className="px-2 py-2 min-w-40 max-w-56">
         <div className="flex items-start gap-1">
@@ -276,9 +278,10 @@ interface Props {
   onRemove: (taskId: string) => void
   emptyMessage?: string
   pendingRequests?: ChangeRequest[]
+  readonly?: boolean
 }
 
-export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessage, pendingRequests = [] }: Props) {
+export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessage, pendingRequests = [], readonly = false }: Props) {
   const canEdit = role === 'admin' || role === 'super_admin'
   const isMember = role === 'member'
   const [changeRequestTask, setChangeRequestTask] = useState<TaskView | null>(null)
@@ -342,7 +345,7 @@ export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessag
               <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Completed</th>
               <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Time</th>
               <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Pub</th>
-              {(canEdit || isMember) && <th className="px-2 py-2"></th>}
+              {(canEdit || isMember) && !readonly && <th className="px-2 py-2"></th>}
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -358,6 +361,7 @@ export default function TaskTable({ tasks, role, onUpdate, onRemove, emptyMessag
                   onDelete={handleDelete}
                   onRequestChange={() => setChangeRequestTask(t)}
                   hasPendingRequest={hasPendingRequest}
+                  readonly={readonly}
                 />
               )
             })}

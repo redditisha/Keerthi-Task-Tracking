@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CreateTaskInput, ContentType, TaskFormat, TaskStatus, TeamMember,
-  CONTENT_TYPES, FORMATS_BY_TYPE, EFFORT_LEVELS, PRIORITIES,
-  REQUEST_SOURCES, TASK_STATUSES,
+  CONTENT_TYPES, FORMATS_BY_TYPE, EFFORT_LEVELS, PRIORITIES, TASK_STATUSES,
 } from '@/types'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -40,6 +39,20 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
   const [form, setForm] = useState<CreateTaskInput>({ ...DEFAULT, ...initialValues })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [channels, setChannels] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/channels')
+      .then((r) => r.json())
+      .then((json) => {
+        const names: string[] = (json.data ?? []).map((c: { name: string }) => c.name)
+        setChannels(names)
+        // Pre-select first channel if no initial value set
+        if (!initialValues?.request_source && names.length > 0) {
+          setForm((prev) => ({ ...prev, request_source: names[0] }))
+        }
+      })
+  }, [])
 
   const set = (key: keyof CreateTaskInput, value: string | boolean | number) => {
     setForm((prev) => {
@@ -152,10 +165,14 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
       {/* Request source + Status */}
       <div className="grid grid-cols-2 gap-4">
         <Select
-          label="Request Source *"
+          label="Channel / Request Source *"
           value={form.request_source}
-          onChange={(e) => set('request_source', e.target.value as typeof form.request_source)}
-          options={REQUEST_SOURCES.map((s) => ({ value: s, label: s }))}
+          onChange={(e) => set('request_source', e.target.value)}
+          options={
+            channels.length > 0
+              ? channels.map((s) => ({ value: s, label: s }))
+              : [{ value: form.request_source || 'Other', label: form.request_source || 'Other' }]
+          }
         />
         <Select
           label="Status *"
@@ -206,7 +223,7 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
         rows={3}
         value={form.notes}
         onChange={(e) => set('notes', e.target.value)}
-        placeholder="What went well or poorly, dependencies, context..."
+        placeholder="Context, Details, and References..."
       />
 
       {/* Actions */}

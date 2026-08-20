@@ -13,7 +13,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await auth()
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <SessionProvider session={session}>
           <Nav session={session} />
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">{children}</main>
