@@ -98,7 +98,7 @@ export default function DashboardClient({
 
       {/* Top-level tab switcher — only for admins who are also members */}
       {isAdminMember && (
-        <div className="flex items-center border-b border-gray-200 gap-1 -mb-1">
+        <div className="flex items-center border-b border-gray-200 gap-1 mb-4">
           <button className={tabClass('team')} onClick={() => setDashTab('team')}>
             Team Dashboard
           </button>
