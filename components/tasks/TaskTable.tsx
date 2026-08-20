@@ -229,7 +229,7 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
       {/* Actions */}
       {canEdit && (
         <td className="px-2 py-2 whitespace-nowrap">
-          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1.5">
             {!isCompleted && (
               <button
                 onClick={() => onComplete(task)}
@@ -256,7 +256,7 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
       )}
       {isMember && (
         <td className="px-2 py-2 whitespace-nowrap">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div>
             <button
               onClick={onRequestChange}
               className="text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded hover:bg-yellow-100 transition-colors"

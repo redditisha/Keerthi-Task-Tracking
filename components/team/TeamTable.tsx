@@ -144,7 +144,7 @@ function MemberRow({ member, activeTasks, weekCompleted, onPatch, saving }: RowP
       <td className="px-4 py-3 text-right">
         <Link
           href={`/team/${member.person_id}`}
-          className="text-xs text-blue-600 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+          className="text-xs text-blue-600 hover:underline"
         >
           View profile →
         </Link>
