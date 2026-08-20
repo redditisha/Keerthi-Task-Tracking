@@ -128,6 +128,7 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
   const isMember = role === 'member' && !readonly
   const isCompleted = task.status === 'Completed'
   const isDeleted = task.status === 'Deleted'
+  const isInReview = task.status === 'In Review'
 
   return (
     <tr className={`group border-b border-gray-100 hover:bg-gray-50 text-sm ${isCompleted ? 'opacity-70' : ''} ${isDeleted ? 'opacity-50 line-through-[task]' : ''}`}>
@@ -230,14 +231,33 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
       {canEdit && (
         <td className="px-2 py-2 whitespace-nowrap">
           <div className="flex items-center gap-1.5">
-            {!isCompleted && (
-              <button
-                onClick={() => onComplete(task)}
-                className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
-                title="Mark as completed"
-              >
-                ✓
-              </button>
+            {isInReview ? (
+              <>
+                <button
+                  onClick={() => onComplete(task)}
+                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
+                  title="Approve — mark as completed"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => onPatch(task.task_id, { status: 'In Progress' })}
+                  className="text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 rounded hover:bg-gray-100 transition-colors"
+                  title="Send back to In Progress"
+                >
+                  Send Back
+                </button>
+              </>
+            ) : (
+              !isCompleted && (
+                <button
+                  onClick={() => onComplete(task)}
+                  className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors"
+                  title="Mark as completed"
+                >
+                  ✓
+                </button>
+              )
             )}
             <Link
               href={`/tasks/${task.task_id}/edit`}
@@ -256,7 +276,19 @@ function TaskRow({ task, role, onPatch, onComplete, onDelete, onRequestChange, h
       )}
       {isMember && (
         <td className="px-2 py-2 whitespace-nowrap">
-          <div>
+          <div className="flex items-center gap-1.5">
+            {!isCompleted && !isInReview && (
+              <button
+                onClick={() => onPatch(task.task_id, { status: 'In Review' })}
+                className="text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                title="Submit for admin review"
+              >
+                ✓ Complete
+              </button>
+            )}
+            {isInReview && (
+              <span className="text-xs text-blue-600 font-medium">In Review…</span>
+            )}
             <button
               onClick={onRequestChange}
               className="text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded hover:bg-yellow-100 transition-colors"

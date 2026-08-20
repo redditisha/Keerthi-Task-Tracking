@@ -8,7 +8,7 @@ import TaskFilters, { Filters, DEFAULT_FILTERS } from '@/components/tasks/TaskFi
 import { ChangeRequest } from '@/lib/sheets/change-requests'
 import Link from 'next/link'
 
-type Tab = 'active' | 'completed' | 'deleted'
+type Tab = 'active' | 'in_review' | 'completed' | 'deleted'
 
 function applyFilters(tasks: TaskView[], filters: Filters): TaskView[] {
   return tasks.filter((t) => {
@@ -57,7 +57,11 @@ export default function TasksPageClient({ role }: Props) {
   }, [])
 
   const activeTasks = useMemo(
-    () => applyFilters(tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Deleted'), filters),
+    () => applyFilters(tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Deleted' && t.status !== 'In Review'), filters),
+    [tasks, filters]
+  )
+  const inReviewTasks = useMemo(
+    () => applyFilters(tasks.filter((t) => t.status === 'In Review'), filters),
     [tasks, filters]
   )
   const completedTasks = useMemo(
@@ -68,7 +72,11 @@ export default function TasksPageClient({ role }: Props) {
     () => tasks.filter((t) => t.status === 'Deleted'),
     [tasks]
   )
-  const displayed = tab === 'active' ? activeTasks : tab === 'completed' ? completedTasks : deletedTasks
+  const displayed =
+    tab === 'active' ? activeTasks :
+    tab === 'in_review' ? inReviewTasks :
+    tab === 'completed' ? completedTasks :
+    deletedTasks
 
   const handleUpdate = (updated: TaskView) => {
     setTasks((prev) => prev.map((t) => (t.task_id === updated.task_id ? updated : t)))
@@ -101,7 +109,7 @@ export default function TasksPageClient({ role }: Props) {
         )}
       </div>
 
-      {tab !== 'deleted' && (
+      {tab !== 'deleted' && tab !== 'in_review' && (
         <TaskFilters
           filters={filters}
           members={members}
@@ -116,6 +124,14 @@ export default function TasksPageClient({ role }: Props) {
           {!loading && (
             <span className="ml-1.5 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
               {activeTasks.length}
+            </span>
+          )}
+        </button>
+        <button className={tabClass('in_review')} onClick={() => setTab('in_review')}>
+          In Review
+          {!loading && inReviewTasks.length > 0 && (
+            <span className="ml-1.5 text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">
+              {inReviewTasks.length}
             </span>
           )}
         </button>
@@ -149,7 +165,10 @@ export default function TasksPageClient({ role }: Props) {
           onRemove={handleRemove}
           pendingRequests={pendingRequests}
           emptyMessage={
-            tab === 'active' ? 'No active tasks.' : tab === 'completed' ? 'No completed tasks yet.' : 'No deleted tasks.'
+            tab === 'active' ? 'No active tasks.' :
+            tab === 'in_review' ? 'No tasks pending review.' :
+            tab === 'completed' ? 'No completed tasks yet.' :
+            'No deleted tasks.'
           }
           readonly={tab === 'deleted'}
         />

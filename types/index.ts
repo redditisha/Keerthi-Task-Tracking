@@ -15,7 +15,7 @@ export type TaskFormat = VideoFormat | CreativeFormat | WrittenFormat
 export type Effort = 'Low' | 'Medium' | 'High'
 export type Priority = 'Urgent' | 'Normal'
 export type RequestSource = string   // dynamic — managed via Channels sheet
-export type TaskStatus = 'Not Started' | 'Started' | 'In Progress' | 'Completed' | 'On Hold / Blocked' | 'Deleted'
+export type TaskStatus = 'Not Started' | 'Started' | 'In Progress' | 'In Review' | 'Completed' | 'On Hold / Blocked' | 'Deleted'
 export type UserRole = 'Editor' | 'Designer' | 'Writer' | 'Content Manager' | 'Other'
 export type AppRole = 'super_admin' | 'admin' | 'member' | 'viewer'
 
@@ -161,5 +161,5 @@ export const FORMATS_BY_TYPE: Record<ContentType, TaskFormat[]> = {
 export const EFFORT_LEVELS: Effort[] = ['Low', 'Medium', 'High']
 export const PRIORITIES: Priority[] = ['Urgent', 'Normal']
 export const REQUEST_SOURCES: RequestSource[] = []   // kept for compatibility; populated dynamically from Channels sheet
-export const TASK_STATUSES: TaskStatus[] = ['Not Started', 'Started', 'In Progress', 'Completed', 'On Hold / Blocked']
+export const TASK_STATUSES: TaskStatus[] = ['Not Started', 'Started', 'In Progress', 'In Review', 'Completed', 'On Hold / Blocked']
 export const USER_ROLES: UserRole[] = ['Editor', 'Designer', 'Writer', 'Content Manager', 'Other']

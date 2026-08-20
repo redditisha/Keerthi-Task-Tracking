@@ -30,9 +30,14 @@ export default function DashboardClient({
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All')
   const [urgentOnly, setUrgentOnly] = useState(false)
   const [overdueOnly, setOverdueOnly] = useState(false)
+  const [inReviewOnly, setInReviewOnly] = useState(false)
 
   const activeTasks = useMemo(
-    () => tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Deleted'),
+    () => tasks.filter((t) => t.status !== 'Completed' && t.status !== 'Deleted' && t.status !== 'In Review'),
+    [tasks]
+  )
+  const inReviewTasks = useMemo(
+    () => tasks.filter((t) => t.status === 'In Review'),
     [tasks]
   )
 
@@ -59,30 +64,34 @@ export default function DashboardClient({
   const personTaskMap = useMemo(() => {
     const map: Record<string, TaskView[]> = {}
     for (const m of visibleMembers) {
-      let personTasks = activeTasks.filter((t) => t.person_id === m.person_id)
+      let personTasks = inReviewOnly
+        ? inReviewTasks.filter((t) => t.person_id === m.person_id)
+        : activeTasks.filter((t) => t.person_id === m.person_id)
       if (urgentOnly) personTasks = personTasks.filter((t) => t.priority === 'Urgent')
       if (overdueOnly) personTasks = personTasks.filter((t) => t.deadline_performance === 'Overdue')
       map[m.person_id] = personTasks
     }
     return map
-  }, [visibleMembers, activeTasks, urgentOnly, overdueOnly])
+  }, [visibleMembers, activeTasks, inReviewTasks, urgentOnly, overdueOnly, inReviewOnly])
 
   const totalActive = Object.values(personTaskMap).flat().length
   const totalUrgent = activeTasks.filter((t) => t.priority === 'Urgent').length
   const totalOverdue = activeTasks.filter((t) => t.deadline_performance === 'Overdue').length
+  const totalInReview = inReviewTasks.length
 
-  const anyFilterActive = urgentOnly || overdueOnly
+  const anyFilterActive = urgentOnly || overdueOnly || inReviewOnly
   const peopleToShow = anyFilterActive
     ? visibleMembers.filter((m) => (personTaskMap[m.person_id]?.length ?? 0) > 0)
     : visibleMembers
 
   const defaultOpen = !(isAdmin && roleFilter === 'All')
-  const forceOpen = urgentOnly || overdueOnly
+  const forceOpen = urgentOnly || overdueOnly || inReviewOnly
 
   function handleRoleFilter(r: UserRole | 'All') {
     setRoleFilter(r)
     setUrgentOnly(false)
     setOverdueOnly(false)
+    setInReviewOnly(false)
   }
 
   // ── Tab bar (only shown for admin-members) ────────────────────────────────
@@ -180,7 +189,7 @@ export default function DashboardClient({
 
                 {/* Urgent toggle */}
                 <button
-                  onClick={() => { setUrgentOnly((v) => !v); setOverdueOnly(false) }}
+                  onClick={() => { setUrgentOnly((v) => !v); setOverdueOnly(false); setInReviewOnly(false) }}
                   className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
                     urgentOnly
                       ? 'bg-red-600 text-white border-red-600'
@@ -192,7 +201,7 @@ export default function DashboardClient({
 
                 {/* Overdue toggle */}
                 <button
-                  onClick={() => { setOverdueOnly((v) => !v); setUrgentOnly(false) }}
+                  onClick={() => { setOverdueOnly((v) => !v); setUrgentOnly(false); setInReviewOnly(false) }}
                   className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
                     overdueOnly
                       ? 'bg-orange-500 text-white border-orange-500'
@@ -200,6 +209,18 @@ export default function DashboardClient({
                   }`}
                 >
                   Overdue{totalOverdue > 0 && ` · ${totalOverdue}`}
+                </button>
+
+                {/* In Review toggle */}
+                <button
+                  onClick={() => { setInReviewOnly((v) => !v); setUrgentOnly(false); setOverdueOnly(false) }}
+                  className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                    inReviewOnly
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  In Review{totalInReview > 0 && ` · ${totalInReview}`}
                 </button>
               </div>
             )}
@@ -243,7 +264,7 @@ export default function DashboardClient({
           {/* Person cards */}
           {peopleToShow.length === 0 ? (
             <div className="text-center py-16 text-sm text-gray-400">
-              {urgentOnly ? 'No urgent tasks right now.' : overdueOnly ? 'No overdue tasks right now.' : 'No active tasks.'}
+              {urgentOnly ? 'No urgent tasks right now.' : overdueOnly ? 'No overdue tasks right now.' : inReviewOnly ? 'No tasks in review right now.' : 'No active tasks.'}
             </div>
           ) : (
             <div className="space-y-3">

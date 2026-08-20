@@ -1,6 +1,6 @@
 import { TaskStatus, Priority, Effort, DeadlinePerformance } from '@/types'
 
-type Variant = 'default' | 'urgent' | 'success' | 'warning' | 'danger' | 'muted'
+type Variant = 'default' | 'urgent' | 'success' | 'warning' | 'danger' | 'muted' | 'info'
 
 const variantClass: Record<Variant, string> = {
   default: 'bg-gray-100 text-gray-700',
@@ -9,6 +9,7 @@ const variantClass: Record<Variant, string> = {
   warning: 'bg-amber-100 text-amber-700',
   danger: 'bg-red-100 text-red-700',
   muted: 'bg-gray-100 text-gray-500',
+  info: 'bg-blue-100 text-blue-700',
 }
 
 export function Badge({ label, variant = 'default' }: { label: string; variant?: Variant }) {
@@ -24,6 +25,7 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
     'Not Started': 'muted',
     'Started': 'default',
     'In Progress': 'warning',
+    'In Review': 'info',
     'Completed': 'success',
     'On Hold / Blocked': 'danger',
     'Deleted': 'muted',
