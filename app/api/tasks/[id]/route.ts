@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const changes: Record<string, [unknown, unknown]> = {}
     if (oldTask) {
       for (const key of Object.keys(patch)) {
-        const oldVal = (oldTask as Record<string, unknown>)[key]
+        const oldVal = (oldTask as unknown as Record<string, unknown>)[key]
         const newVal = patch[key]
         if (String(oldVal) !== String(newVal)) {
           changes[key] = [oldVal, newVal]

@@ -74,6 +74,7 @@ export interface CreateTaskInput {
   priority: Priority
   request_source: RequestSource
   deadline: string
+  added_at?: string
   started_at?: string
   completed_at?: string
   status: TaskStatus

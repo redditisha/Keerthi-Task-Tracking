@@ -26,6 +26,7 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
     'In Progress': 'warning',
     'Completed': 'success',
     'On Hold / Blocked': 'danger',
+    'Deleted': 'muted',
   }
   return <Badge label={status} variant={map[status]} />
 }
