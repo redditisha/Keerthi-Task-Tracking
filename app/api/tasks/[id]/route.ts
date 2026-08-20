@@ -23,14 +23,27 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const { role, email } = await getAppSession()
-  if (!canEdit(role)) {
+  const { role, email, person_id } = await getAppSession()
+
+  const patch = await req.json()
+
+  // Members may only set their own tasks to 'In Review'
+  const isMemberSubmit =
+    role === 'member' &&
+    patch.status === 'In Review' &&
+    Object.keys(patch).length === 1
+
+  if (!canEdit(role) && !isMemberSubmit) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   try {
-    const patch = await req.json()
     const oldTask = await getTaskById(id)
+
+    // Extra guard: member can only submit their own task
+    if (isMemberSubmit && oldTask?.person_id !== person_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
     const input: UpdateTaskInput = { ...patch, task_id: id }
     const task = await updateTask(input)
