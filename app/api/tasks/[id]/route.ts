@@ -45,6 +45,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // If status is moving away from Completed, clear completed_at
+    if (patch.status && patch.status !== 'Completed' && oldTask?.status === 'Completed') {
+      patch.completed_at = ''
+    }
+
     const input: UpdateTaskInput = { ...patch, task_id: id }
     const task = await updateTask(input)
     if (!task) return NextResponse.json({ error: 'Not found' }, { status: 404 })
