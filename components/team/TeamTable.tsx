@@ -204,7 +204,8 @@ export default function TeamTable({ members, counts, onUpdate }: Props) {
       )}
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
@@ -239,6 +240,7 @@ export default function TeamTable({ members, counts, onUpdate }: Props) {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Inactive members — also editable */}
@@ -246,7 +248,8 @@ export default function TeamTable({ members, counts, onUpdate }: Props) {
         <div>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Inactive</h2>
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
               <tbody>
                 {inactive.map((m) => {
                   const c = countFor(m.person_id)
@@ -263,6 +266,7 @@ export default function TeamTable({ members, counts, onUpdate }: Props) {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
