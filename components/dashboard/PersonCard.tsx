@@ -89,6 +89,11 @@ export default function PersonCard({ member, tasks, defaultOpen = true, forceOpe
                     <p className="text-xs text-gray-400 mt-0.5">{t.content_type} · {t.format}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    {(t.video_quantity ?? 1) > 1 && (
+                      <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
+                        ×{t.video_quantity}
+                      </span>
+                    )}
                     {t.priority === 'Urgent' && <PriorityBadge priority="Urgent" />}
                     <StatusBadge status={t.status} />
                     {deadline && (
