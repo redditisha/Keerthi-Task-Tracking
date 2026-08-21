@@ -81,6 +81,10 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.person_id) {
+      setError('Please assign the task to at least one person.')
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -124,17 +128,41 @@ export default function TaskForm({ members, initialValues, taskId, onSuccess }: 
         placeholder="e.g. BSNL Independence Day Reel"
       />
 
-      {/* Person */}
-      <Select
-        label="Person *"
-        required
-        value={form.person_id}
-        onChange={(e) => set('person_id', e.target.value)}
-        options={[
-          { value: '', label: '— Select person —' },
-          ...activeMembers.map((m) => ({ value: m.person_id, label: `${m.name} (${m.role})` })),
-        ]}
-      />
+      {/* Person(s) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Assign To <span className="text-gray-400 font-normal text-xs">(select one or more)</span>
+        </label>
+        <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto">
+          {activeMembers.map((m) => {
+            const selected = form.person_id.split(',').map((id) => id.trim()).includes(m.person_id)
+            return (
+              <label key={m.person_id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={(e) => {
+                    const current = form.person_id.split(',').map((id) => id.trim()).filter(Boolean)
+                    const next = e.target.checked
+                      ? [...current, m.person_id]
+                      : current.filter((id) => id !== m.person_id)
+                    set('person_id', next.join(','))
+                  }}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">{m.name}</span>
+                <span className="text-xs text-gray-400 ml-auto">{m.role}</span>
+              </label>
+            )
+          })}
+          {activeMembers.length === 0 && (
+            <p className="px-3 py-3 text-sm text-gray-400">No active team members.</p>
+          )}
+        </div>
+        {!form.person_id && (
+          <p className="text-xs text-red-500 mt-1">Please select at least one person.</p>
+        )}
+      </div>
 
       {/* Content type + format */}
       <div className="grid grid-cols-2 gap-4">

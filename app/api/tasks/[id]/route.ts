@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const oldTask = await getTaskById(id)
 
     // Extra guard: member can only submit their own task
-    if (isMemberSubmit && oldTask?.person_id !== person_id) {
+    if (isMemberSubmit && !oldTask?.person_id.split(',').map(id => id.trim()).includes(person_id ?? '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 

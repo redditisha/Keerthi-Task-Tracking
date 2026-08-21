@@ -49,11 +49,13 @@ export function calcDelayDuration(task: Task): string | null {
 }
 
 export function enrichTask(task: Task, members: TeamMember[]): TaskView {
-  const member = members.find((m) => m.person_id === task.person_id)
+  const ids = task.person_id.split(',').map((id) => id.trim()).filter(Boolean)
+  const matched = ids.map((id) => members.find((m) => m.person_id === id)).filter(Boolean) as TeamMember[]
+  const primary = matched[0]
   return {
     ...task,
-    person_name: member?.name ?? 'Unknown',
-    person_role: (member?.role ?? 'Other') as UserRole,
+    person_name: matched.length > 0 ? matched.map((m) => m.name).join(', ') : 'Unknown',
+    person_role: (primary?.role ?? 'Other') as UserRole,
     turnaround_time: calcTurnaround(task),
     working_duration: calcWorkingDuration(task),
     deadline_performance: calcDeadlinePerformance(task),

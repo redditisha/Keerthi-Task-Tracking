@@ -14,7 +14,7 @@ type Tab = 'active' | 'in_review' | 'completed' | 'deleted' | 'change_requests'
 function applyFilters(tasks: TaskView[], filters: Filters): TaskView[] {
   return tasks.filter((t) => {
     if (filters.search && !t.task_name.toLowerCase().includes(filters.search.toLowerCase())) return false
-    if (filters.person_id && t.person_id !== filters.person_id) return false
+    if (filters.person_id && !t.person_id.split(',').map(id => id.trim()).includes(filters.person_id)) return false
     if (filters.status && t.status !== filters.status) return false
     if (filters.content_type && t.content_type !== filters.content_type) return false
     if (filters.effort && t.effort !== filters.effort) return false

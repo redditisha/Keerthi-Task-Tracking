@@ -47,7 +47,7 @@ export default function DashboardClient({
     [members, person_id]
   )
   const myTasks = useMemo(
-    () => activeTasks.filter((t) => t.person_id === person_id),
+    () => activeTasks.filter((t) => t.person_id.split(',').map(id => id.trim()).includes(person_id ?? '')),
     [activeTasks, person_id]
   )
   const myUrgent = myTasks.filter((t) => t.priority === 'Urgent').length
@@ -65,8 +65,8 @@ export default function DashboardClient({
     const map: Record<string, TaskView[]> = {}
     for (const m of visibleMembers) {
       let personTasks = inReviewOnly
-        ? inReviewTasks.filter((t) => t.person_id === m.person_id)
-        : activeTasks.filter((t) => t.person_id === m.person_id)
+        ? inReviewTasks.filter((t) => t.person_id.split(',').map(id => id.trim()).includes(m.person_id))
+        : activeTasks.filter((t) => t.person_id.split(',').map(id => id.trim()).includes(m.person_id))
       if (urgentOnly) personTasks = personTasks.filter((t) => t.priority === 'Urgent')
       if (overdueOnly) personTasks = personTasks.filter((t) => t.deadline_performance === 'Overdue')
       map[m.person_id] = personTasks
