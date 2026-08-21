@@ -15,7 +15,7 @@ function fmtDatetime(iso: string) {
 
 function fmtDeadline(iso: string) {
   if (!iso) return '—'
-  try { return format(parseISO(iso), 'MMM d') } catch { return iso }
+  try { return format(parseISO(iso), 'MMM d, h:mm a') } catch { return iso }
 }
 
 // Convert ISO → datetime-local input value and back
